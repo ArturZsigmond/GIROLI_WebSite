@@ -25,6 +25,7 @@ model Product {
   depth       Float?
   weight      Float?
   material    String?
+  imageUrl String?
   images      ProductImage[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
