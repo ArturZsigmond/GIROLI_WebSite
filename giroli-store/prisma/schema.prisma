@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}
+
+model Product {
+  id          String          @id @default(uuid())
+  title       String
+  description String
+  price       Int
+  category    Category
+  height      Float?
+  width       Float?
+  depth       Float?
+  weight      Float?
+  material    String?
+  images      ProductImage[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProductImage {
+  id        String  @id @default(uuid())
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+  url       String
+}
+
+model Order {
+  id              String       @id @default(uuid())
+  customerName    String
+  customerEmail   String
+  customerPhone   String
+  customerAddress String
+  totalPrice      Int
+  createdAt       DateTime @default(now())
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id              String  @id @default(uuid())
+  order           Order   @relation(fields: [orderId], references: [id])
+  orderId         String
+  productId       String
+  quantity        Int
+  priceAtPurchase Int
+}
+
+enum Category {
+  KITCHEN
+  BATHROOM
+  BEDROOM
+  LIVING
+  GENERAL
+}
