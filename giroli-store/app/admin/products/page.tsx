@@ -1,38 +1,62 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 
-export default async function AdminProducts() {
+export default async function ProductsPage() {
+  // Fetch products from DB
   const products = await prisma.product.findMany({
-    include: { images: true },
     orderBy: { createdAt: "desc" },
   });
 
   return (
-    <div>
-      <h1 className="text-3xl font-semibold mb-6">Produse</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {products.map((p) => (
-          <div key={p.id} className="bg-white shadow rounded p-4">
-            {p.images[0] && (
-              <img
-                src={p.images[0].url}
-                className="h-40 w-full object-cover rounded"
-              />
-            )}
-
-            <h2 className="font-semibold mt-4">{p.title}</h2>
-            <p className="text-gray-600">{p.price} RON</p>
-
-            <Link
-              href={`/admin/products/${p.id}`}
-              className="block mt-3 bg-blue-600 text-center text-white py-2 rounded hover:bg-blue-700"
-            >
-              Editează
-            </Link>
-          </div>
-        ))}
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-semibold">Products</h1>
+        <Link
+          href="/admin/products/new"
+          className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
+        >
+          + Add Product
+        </Link>
       </div>
+
+      {products.length === 0 ? (
+        <p className="text-gray-600">No products yet.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {products.map((p) => (
+            <div
+              key={p.id}
+              className="border rounded-lg shadow-sm p-4 bg-white"
+            >
+              {p.imageUrl ? (
+                <img
+                  src={p.imageUrl ?? "/placeholder.png"}
+                  alt={p.title}
+                  className="w-full h-48 object-cover rounded-t"
+                />
+              ) : (
+                <div className="w-full h-48 bg-gray-200 rounded mb-3 flex items-center justify-center text-gray-500">
+                  No Image
+                </div>
+              )}
+
+              <h2 className="text-lg font-semibold">{p.title}</h2>
+              <p className="text-gray-700 text-sm mt-1">{p.description}</p>
+
+              <p className="text-black font-medium mt-2">{p.price} RON</p>
+
+              <div className="mt-4 flex justify-end">
+                <Link
+                  href={`/admin/products/${p.id}`}
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  Edit Product
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

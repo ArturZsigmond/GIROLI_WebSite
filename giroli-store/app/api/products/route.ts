@@ -1,36 +1,50 @@
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/auth";
+import { r2Client, R2_BUCKET } from "@/lib/r2";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import crypto from "crypto";
+import { Category } from "@prisma/client"; // ✅ IMPORTANT
 
 export async function POST(req: Request) {
-  const admin = await requireAdmin();
-  if (!admin) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const form = await req.formData();
 
-  const data = await req.json();
+  const title = form.get("title") as string;
+  const price = Number(form.get("price"));
+  const description = form.get("description") as string;
+  const category = form.get("category") as Category; // ✅ FIX
+
+  const file = form.get("image") as File | null;
+
+  let imageUrl = null;
+
+  if (file) {
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const ext = file.name.split(".").pop();
+    const fileName = `product_${crypto.randomUUID()}.${ext}`;
+
+    await r2Client.send(
+      new PutObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: fileName,
+        Body: buffer,
+        ContentType: file.type,
+      })
+    );
+
+    imageUrl = `${process.env.R2_PUBLIC_URL}/${fileName}`;
+  }
 
   const product = await prisma.product.create({
     data: {
-      title: data.title,
-      description: data.description,
-      price: data.price,
-      category: data.category,
-      height: data.height,
-      width: data.width,
-      depth: data.depth,
-      weight: data.weight,
-      material: data.material,
-      images: {
-        create: data.images.map((url: string) => ({ url })),
-      },
+      title,
+      price,
+      description,
+      imageUrl,
+      category, // ✅ REQUIRED BY PRISMA
     },
   });
 
-  return Response.json(product);
-}
-
-export async function GET() {
-  const products = await prisma.product.findMany({
-    include: { images: true },
-  });
-
-  return Response.json(products);
+  return NextResponse.json(product);
 }

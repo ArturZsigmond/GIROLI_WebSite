@@ -1,96 +1,119 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function NewProductPage() {
-  const [images, setImages] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  async function uploadImage(file: File) {
-    const form = new FormData();
-    form.append("file", file);
+  const [title, setTitle] = useState("");
+  const [price, setPrice] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("KITCHEN");
 
-    const res = await fetch("/api/upload", { method: "POST", body: form });
-    const data = await res.json();
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
 
-    setImages((prev) => [...prev, data.url]);
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImageFile(file);
+    setPreview(URL.createObjectURL(file));
   }
 
-  async function handleSubmit(e: any) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
 
-    const form = e.target;
-    const payload = {
-      title: form.title.value,
-      description: form.description.value,
-      price: Number(form.price.value),
-      category: form.category.value,
-      height: Number(form.height.value),
-      width: Number(form.width.value),
-      depth: Number(form.depth.value),
-      weight: Number(form.weight.value),
-      material: form.material.value,
-      images,
-    };
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("price", price);
+    formData.append("description", description);
+    formData.append("category", category);
 
-    await fetch("/api/products", {
+    if (imageFile) formData.append("image", imageFile);
+
+    const res = await fetch("/api/products", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: formData,
     });
 
-    window.location.href = "/admin/products";
+    if (res.ok) router.push("/admin/products");
+    else alert("Error saving product");
   }
 
   return (
-    <div>
-      <h1 className="text-3xl mb-6 font-semibold">Adaugă produs</h1>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Add Product</h1>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-6">
-        <input name="title" placeholder="Titlu" className="p-2 border rounded" />
-        <input name="price" placeholder="Preț (RON)" className="p-2 border rounded" />
+      <form onSubmit={handleSubmit} className="space-y-4 max-w-lg">
 
-        <select name="category" className="p-2 border rounded">
-          <option value="KITCHEN">Bucătărie</option>
-          <option value="BATHROOM">Baie</option>
-          <option value="BEDROOM">Dormitor</option>
-          <option value="LIVING">Living</option>
-          <option value="GENERAL">Mobilier general</option>
-        </select>
-
-        <input name="material" placeholder="Material" className="p-2 border rounded" />
-
-        <input name="height" placeholder="Înălțime (cm)" className="p-2 border rounded" />
-        <input name="width" placeholder="Lățime (cm)" className="p-2 border rounded" />
-        <input name="depth" placeholder="Adâncime (cm)" className="p-2 border rounded" />
-        <input name="weight" placeholder="Greutate (kg)" className="p-2 border rounded" />
-
-        <textarea
-          name="description"
-          placeholder="Descriere"
-          className="border rounded p-2 col-span-2 h-32"
+        <input
+          type="text"
+          placeholder="Title"
+          className="border p-2 w-full"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
         />
 
-        <div className="col-span-2">
-          <label className="block mb-2 font-semibold">Imagini</label>
+        <input
+          type="number"
+          placeholder="Price"
+          className="border p-2 w-full"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          required
+        />
+
+        <textarea
+          placeholder="Description"
+          className="border p-2 w-full"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          required
+        />
+
+        {/* CATEGORY DROPDOWN */}
+            <select
+            name="category"
+            required
+            className="border p-2 w-full"
+            >
+            <option value="KITCHEN">Kitchen</option>
+            <option value="BATHROOM">Bathroom</option>
+            <option value="BEDROOM">Bedroom</option>
+            <option value="LIVING">Living</option>
+            <option value="GENERAL">General</option>
+            </select>
+
+
+        {/* IMAGE INPUT */}
+        <div>
+          <label className="block mb-1 font-semibold">Product Image</label>
           <input
             type="file"
-            onChange={(e) => uploadImage(e.target.files![0])}
-            className="block mb-4"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="border p-2 w-full"
           />
-          <div className="flex gap-4">
-            {images.map((url) => (
-              <img key={url} src={url} className="h-24 rounded shadow" />
-            ))}
-          </div>
+
+          {preview && (
+            <img
+              src={preview}
+              alt="Preview"
+              className="mt-3 w-48 h-48 object-cover rounded"
+            />
+          )}
         </div>
 
         <button
-          disabled={loading}
-          className="col-span-2 bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+          type="submit"
+          className="bg-blue-600 text-white px-4 py-2 rounded"
         >
-          {loading ? "Se salvează..." : "Salvează produsul"}
+          Save Product
         </button>
+
       </form>
     </div>
   );
