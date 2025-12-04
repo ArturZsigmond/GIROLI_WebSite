@@ -3,9 +3,11 @@ import Link from "next/link";
 
 export default async function ProductsPage() {
   // Fetch products from DB
-  const products = await prisma.product.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+const products = await prisma.product.findMany({
+  orderBy: { createdAt: "desc" },
+  include: { images: true }   // 👈 add this!
+});
+
 
   return (
     <div className="p-6">
@@ -28,9 +30,9 @@ export default async function ProductsPage() {
               key={p.id}
               className="border rounded-lg shadow-sm p-4 bg-white"
             >
-              {p.imageUrl ? (
+              {p.images && p.images.length > 0 ? (
                 <img
-                  src={p.imageUrl ?? "/placeholder.png"}
+                  src={p.images[0].url}
                   alt={p.title}
                   className="w-full h-48 object-cover rounded-t"
                 />
@@ -39,6 +41,7 @@ export default async function ProductsPage() {
                   No Image
                 </div>
               )}
+
 
               <h2 className="text-lg font-semibold">{p.title}</h2>
               <p className="text-gray-700 text-sm mt-1">{p.description}</p>

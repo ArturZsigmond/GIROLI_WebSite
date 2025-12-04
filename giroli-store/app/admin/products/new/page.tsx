@@ -11,15 +11,18 @@ export default function NewProductPage() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("KITCHEN");
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  // MULTIPLE IMAGES
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
 
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files) return;
 
-    setImageFile(file);
-    setPreview(URL.createObjectURL(file));
+    const fileArray = Array.from(files).slice(0, 6); // limit to 6 images
+
+    setImageFiles(fileArray);
+    setPreviews(fileArray.map((f) => URL.createObjectURL(f)));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -31,7 +34,8 @@ export default function NewProductPage() {
     formData.append("description", description);
     formData.append("category", category);
 
-    if (imageFile) formData.append("image", imageFile);
+    // Append ALL selected images
+    imageFiles.forEach((file) => formData.append("images", file));
 
     const res = await fetch("/api/products", {
       method: "POST",
@@ -75,35 +79,43 @@ export default function NewProductPage() {
         />
 
         {/* CATEGORY DROPDOWN */}
-            <select
-            name="category"
-            required
-            className="border p-2 w-full"
-            >
-            <option value="KITCHEN">Kitchen</option>
-            <option value="BATHROOM">Bathroom</option>
-            <option value="BEDROOM">Bedroom</option>
-            <option value="LIVING">Living</option>
-            <option value="GENERAL">General</option>
-            </select>
-
+        <select
+          name="category"
+          required
+          className="border p-2 w-full"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        >
+          <option value="KITCHEN">Kitchen</option>
+          <option value="BATHROOM">Bathroom</option>
+          <option value="BEDROOM">Bedroom</option>
+          <option value="LIVING">Living</option>
+          <option value="GENERAL">General</option>
+        </select>
 
         {/* IMAGE INPUT */}
         <div>
-          <label className="block mb-1 font-semibold">Product Image</label>
+          <label className="block mb-1 font-semibold">Product Images (max 6)</label>
           <input
             type="file"
             accept="image/*"
+            multiple
             onChange={handleImageSelect}
             className="border p-2 w-full"
           />
 
-          {preview && (
-            <img
-              src={preview}
-              alt="Preview"
-              className="mt-3 w-48 h-48 object-cover rounded"
-            />
+          {/* Previews */}
+          {previews.length > 0 && (
+            <div className="grid grid-cols-3 gap-3 mt-3">
+              {previews.map((src, i) => (
+                <img
+                  key={i}
+                  src={src}
+                  alt="Preview"
+                  className="w-32 h-32 object-cover rounded"
+                />
+              ))}
+            </div>
           )}
         </div>
 
@@ -113,7 +125,6 @@ export default function NewProductPage() {
         >
           Save Product
         </button>
-
       </form>
     </div>
   );

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { r2Client, R2_BUCKET } from "@/lib/r2";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
-import { Category } from "@prisma/client"; // ✅ IMPORTANT
+import { Category } from "@prisma/client";
 
 export async function POST(req: Request) {
   const form = await req.formData();
@@ -11,39 +11,61 @@ export async function POST(req: Request) {
   const title = form.get("title") as string;
   const price = Number(form.get("price"));
   const description = form.get("description") as string;
-  const category = form.get("category") as Category; // ✅ FIX
+  const category = form.get("category") as Category;
 
-  const file = form.get("image") as File | null;
+  // Read ALL images (max 6)
+  const files = form.getAll("images") as File[];
 
-  let imageUrl = null;
+  if (files.length > 6) {
+    return NextResponse.json(
+      { error: "Max 6 images allowed" },
+      { status: 400 }
+    );
+  }
 
-  if (file) {
+  // Normalize R2 public base URL (remove trailing slash)
+  const baseUrl = process.env.R2_PUBLIC_URL?.replace(/\/$/, "");
+
+  const uploadedImages: { url: string }[] = [];
+
+  for (const file of files) {
+    if (!(file instanceof File)) continue;
+
+    // Convert file → buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const ext = file.name.split(".").pop();
+    const ext = file.name.split(".").pop() || "jpg";
     const fileName = `product_${crypto.randomUUID()}.${ext}`;
 
+    // Upload to R2
     await r2Client.send(
       new PutObjectCommand({
         Bucket: R2_BUCKET,
         Key: fileName,
         Body: buffer,
-        ContentType: file.type,
+        ContentType: file.type
       })
     );
 
-    imageUrl = `${process.env.R2_PUBLIC_URL}${fileName}`;
+    // Final public URL (no double slash)
+    const url = `${baseUrl}/${fileName}`;
+
+    uploadedImages.push({ url });
   }
 
+  // Create product + all images records
   const product = await prisma.product.create({
     data: {
       title,
       price,
       description,
-      imageUrl,
-      category, // ✅ REQUIRED BY PRISMA
+      category,
+      images: {
+        create: uploadedImages
+      }
     },
+    include: { images: true }
   });
 
   return NextResponse.json(product);
