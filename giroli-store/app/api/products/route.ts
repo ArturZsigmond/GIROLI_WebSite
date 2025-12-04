@@ -33,7 +33,7 @@ export async function POST(req: Request) {
       })
     );
 
-    imageUrl = `${process.env.R2_PUBLIC_URL}/${fileName}`;
+    imageUrl = `${process.env.R2_PUBLIC_URL}${fileName}`;
   }
 
   const product = await prisma.product.create({
