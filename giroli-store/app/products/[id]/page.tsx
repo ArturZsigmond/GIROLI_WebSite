@@ -2,6 +2,10 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
+import { Header } from "@/components/Header";
+import { Button } from "@/components/Button";
+import { useCartStore } from "@/store/cartStore";
+import { getCategoryLabel } from "@/lib/categories";
 
 interface ProductImage {
   id: string;
@@ -22,14 +26,6 @@ interface Product {
   images: ProductImage[];
 }
 
-const categoryLabels: Record<string, string> = {
-  KITCHEN: "Bucătărie",
-  BATHROOM: "Baie",
-  BEDROOM: "Dormitor",
-  LIVING: "Living",
-  GENERAL: "General",
-};
-
 export default function ProductDetailPage({
   params,
 }: {
@@ -39,6 +35,10 @@ export default function ProductDetailPage({
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [addedToCart, setAddedToCart] = useState(false);
+  
+  // All hooks must be called before any conditional returns
+  const addToCart = useCartStore((state) => state.addItem);
 
   useEffect(() => {
     async function loadProduct() {
@@ -58,6 +58,19 @@ export default function ProductDetailPage({
     }
     loadProduct();
   }, [id]);
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    addToCart({
+      id: product.id,
+      title: product.title,
+      price: product.price,
+      imageUrl: product.images?.[0]?.url || "",
+    });
+    setAddedToCart(true);
+    // Reset feedback after a brief moment, but don't disable the button
+    setTimeout(() => setAddedToCart(false), 500);
+  };
 
   if (loading) {
     return (
@@ -92,33 +105,16 @@ export default function ProductDetailPage({
   }
 
   const primaryImage =
-    product.images && product.images.length > 0
+    product && product.images && product.images.length > 0
       ? product.images[selectedImageIndex]?.url || product.images[0].url
       : null;
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-blue-700 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
-            <Link href="/" className="text-3xl font-bold hover:text-blue-200">
-              Giroli CNC
-            </Link>
-            <nav className="flex gap-4">
-              <Link href="/" className="hover:text-blue-200">
-                Acasă
-              </Link>
-              <Link href="/admin-login" className="hover:text-blue-200">
-                Admin
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-white flex flex-col">
+      <Header />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         {/* Breadcrumb */}
         <nav className="mb-6">
           <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -188,7 +184,7 @@ export default function ProductDetailPage({
           <div>
             <div className="mb-4">
               <span className="inline-block bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full mb-2">
-                {categoryLabels[product.category] || product.category}
+                {getCategoryLabel(product.category)}
               </span>
               <h1 className="text-3xl font-bold text-gray-800 mb-4">
                 {product.title}
@@ -265,19 +261,24 @@ export default function ProductDetailPage({
 
             {/* Action Buttons */}
             <div className="flex gap-4">
-              <button className="flex-1 bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-800 transition-colors">
-                Adaugă în coș
-              </button>
-              <button className="px-6 py-3 border-2 border-blue-700 text-blue-700 rounded-lg font-semibold hover:bg-blue-50 transition-colors">
+              <Button
+                onClick={handleAddToCart}
+                variant="primary"
+                size="lg"
+                className="flex-1"
+              >
+                {addedToCart ? "✓ Adăugat în coș!" : "Adaugă în coș"}
+              </Button>
+              <Button variant="outline" size="lg">
                 Contactează-ne
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-100 border-t border-gray-200 mt-12">
+      <footer className="bg-gray-100 border-t border-gray-200 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <p className="text-center text-gray-600">
             © {new Date().getFullYear()} Giroli CNC. Toate drepturile rezervate.

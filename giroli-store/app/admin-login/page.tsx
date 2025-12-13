@@ -54,7 +54,7 @@ export default function AdminLogin() {
           type="password"
         />
 
-        <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+        <button className="w-full bg-blue-700 text-white py-3 rounded-lg font-semibold hover:bg-blue-800 active:bg-blue-900 transition-all duration-200 transform active:scale-95 shadow-md hover:shadow-lg">
           Autentificare
         </button>
       </form>

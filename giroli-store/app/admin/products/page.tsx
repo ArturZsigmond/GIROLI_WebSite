@@ -14,7 +14,7 @@ export default async function ProductsPage() {
         <h1 className="text-3xl font-semibold">Products</h1>
         <Link
           href="/admin/products/new"
-          className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
+          className="bg-black text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 active:bg-gray-900 transition-all duration-200 transform active:scale-95 shadow-md hover:shadow-lg"
         >
           + Add Product
         </Link>
@@ -30,13 +30,15 @@ export default async function ProductsPage() {
               className="border rounded-lg shadow-sm p-4 bg-white"
             >
               {p.images?.length > 0 ? (
-                <img
-                  src={p.images[0].url}
-                  alt={p.title}
-                  className="w-full h-48 object-cover rounded-t"
-                />
+                <div className="w-full aspect-square bg-gray-100 rounded-t overflow-hidden">
+                  <img
+                    src={p.images[0].url}
+                    alt={p.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               ) : (
-                <div className="w-full h-48 bg-gray-200 rounded mb-3 flex items-center justify-center text-gray-500">
+                <div className="w-full aspect-square bg-gray-200 rounded-t mb-3 flex items-center justify-center text-gray-500">
                   No Image
                 </div>
               )}

@@ -268,9 +268,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             onChange={(e) => setCategory(e.target.value as Category)}
             required
           >
-            <option value="KITCHEN">Kitchen</option>
-            <option value="BATHROOM">Bathroom</option>
-            <option value="BEDROOM">Bedroom</option>
+            <option value="KITCHEN">Bucătărie</option>
+            <option value="BATHROOM">Baie</option>
+            <option value="BEDROOM">Dormitor</option>
             <option value="LIVING">Living</option>
             <option value="GENERAL">General</option>
           </select>
@@ -389,7 +389,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 <button
                   type="button"
                   onClick={handleAddNewImages}
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                  className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 active:bg-green-800 transition-all duration-200 transform active:scale-95 shadow-md hover:shadow-lg"
                 >
                   Add These Images
                 </button>
@@ -402,7 +402,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           <button
             type="submit"
             disabled={saving}
-            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+            className="bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-800 active:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform active:scale-95 disabled:transform-none shadow-md hover:shadow-lg"
           >
             {saving ? "Saving..." : "Save Changes"}
           </button>
@@ -410,7 +410,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           <button
             type="button"
             onClick={() => router.push("/admin/products")}
-            className="bg-gray-400 text-white px-6 py-2 rounded hover:bg-gray-500"
+            className="bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-500 active:bg-gray-600 transition-all duration-200 transform active:scale-95 shadow-md hover:shadow-lg"
           >
             Cancel
           </button>

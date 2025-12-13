@@ -32,7 +32,7 @@ model Product {
 
 model ProductImage {
   id        String  @id @default(uuid())
-  product   Product @relation(fields: [productId], references: [id])
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId String
   url       String
 }
@@ -63,4 +63,31 @@ enum Category {
   BEDROOM
   LIVING
   GENERAL
+}
+
+model Employee {
+  id          String   @id @default(uuid())
+  name        String
+  role        String
+  description String
+  imageUrl    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProjectShowcase {
+  id          String                @id @default(uuid())
+  title       String
+  description String
+  category    Category
+  images      ProjectShowcaseImage[]
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+}
+
+model ProjectShowcaseImage {
+  id                String          @id @default(uuid())
+  projectShowcase   ProjectShowcase @relation(fields: [projectShowcaseId], references: [id], onDelete: Cascade)
+  projectShowcaseId String
+  url               String
 }
