@@ -1,6 +1,6 @@
-import { removeAdminCookie } from "@/lib/auth";
+import { deleteAdminSession } from "@/lib/auth";
 
 export async function POST() {
-  removeAdminCookie();
+  await deleteAdminSession();
   return Response.json({ success: true });
 }

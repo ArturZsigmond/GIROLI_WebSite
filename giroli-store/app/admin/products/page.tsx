@@ -1,13 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { DeleteButton } from "@/components/DeleteButton";
 
 export default async function ProductsPage() {
-  // Fetch products from DB
-const products = await prisma.product.findMany({
-  orderBy: { createdAt: "desc" },
-  include: { images: true }   // 👈 add this!
-});
-
+  const products = await prisma.product.findMany({
+    orderBy: { createdAt: "desc" },
+    include: { images: true }
+  });
 
   return (
     <div className="p-6">
@@ -30,7 +29,7 @@ const products = await prisma.product.findMany({
               key={p.id}
               className="border rounded-lg shadow-sm p-4 bg-white"
             >
-              {p.images && p.images.length > 0 ? (
+              {p.images?.length > 0 ? (
                 <img
                   src={p.images[0].url}
                   alt={p.title}
@@ -42,19 +41,20 @@ const products = await prisma.product.findMany({
                 </div>
               )}
 
-
               <h2 className="text-lg font-semibold">{p.title}</h2>
               <p className="text-gray-700 text-sm mt-1">{p.description}</p>
-
               <p className="text-black font-medium mt-2">{p.price} RON</p>
 
-              <div className="mt-4 flex justify-end">
+              <div className="mt-4 flex justify-between items-center">
                 <Link
                   href={`/admin/products/${p.id}`}
                   className="text-sm text-blue-600 hover:underline"
                 >
                   Edit Product
                 </Link>
+
+                {/* DELETE BUTTON */}
+                <DeleteButton productId={p.id} />
               </div>
             </div>
           ))}
