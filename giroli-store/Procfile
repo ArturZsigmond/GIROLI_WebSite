@@ -1,2 +1,2 @@
-web: cd giroli-store && npm start
+web:  npm start
 
