@@ -5,6 +5,35 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import crypto from "crypto";
 import { Category } from "@prisma/client";
 
+// Public GET endpoint for storefront
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const page = parseInt(searchParams.get("page") || "1");
+  const limit = parseInt(searchParams.get("limit") || "15");
+  const skip = (page - 1) * limit;
+
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      skip,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      include: { images: true },
+    }),
+    prisma.product.count(),
+  ]);
+
+  return NextResponse.json({
+    products,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  });
+}
+
+// Admin POST endpoint for creating products
 export async function POST(req: Request) {
   const form = await req.formData();
 
@@ -70,3 +99,8 @@ export async function POST(req: Request) {
 
   return NextResponse.json(product);
 }
+
+
+
+
+
