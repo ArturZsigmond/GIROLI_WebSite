@@ -49,7 +49,7 @@ export default function OrdersPage() {
         setOrders(data.orders || []);
         // Convert productMap object to Map
         const productMapObj = data.productMap || {};
-        const productMap = new Map(Object.entries(productMapObj));
+        const productMap = new Map<string, string>(Object.entries(productMapObj) as [string, string][]);
         setProducts(productMap);
       } catch (error) {
         console.error("Error loading orders:", error);
