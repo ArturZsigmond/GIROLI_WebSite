@@ -43,18 +43,18 @@ export default function NewProductPage() {
     });
 
     if (res.ok) router.push("/admin/products");
-    else alert("Error saving product");
+    else alert("Eroare la salvarea produsului");
   }
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Add Product</h1>
+      <h1 className="text-2xl font-bold mb-4">Adaugă Produs</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4 max-w-lg">
 
         <input
           type="text"
-          placeholder="Title"
+          placeholder="Titlu"
           className="border p-2 w-full"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -63,7 +63,7 @@ export default function NewProductPage() {
 
         <input
           type="number"
-          placeholder="Price"
+          placeholder="Preț (RON)"
           className="border p-2 w-full"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
@@ -71,7 +71,7 @@ export default function NewProductPage() {
         />
 
         <textarea
-          placeholder="Description"
+          placeholder="Descriere"
           className="border p-2 w-full"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -95,7 +95,7 @@ export default function NewProductPage() {
 
         {/* IMAGE INPUT */}
         <div>
-          <label className="block mb-1 font-semibold">Product Images (max 6)</label>
+          <label className="block mb-1 font-semibold">Imagini Produs (max 6)</label>
           <input
             type="file"
             accept="image/*"
@@ -123,7 +123,7 @@ export default function NewProductPage() {
           type="submit"
           className="bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-800 active:bg-blue-900 transition-all duration-200 transform active:scale-95 shadow-md hover:shadow-lg"
         >
-          Save Product
+          Salvează Produsul
         </button>
       </form>
     </div>

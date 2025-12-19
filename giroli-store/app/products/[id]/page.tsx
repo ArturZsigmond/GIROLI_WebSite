@@ -50,6 +50,22 @@ export default function ProductDetailPage({
         }
         const data: Product = await res.json();
         setProduct(data);
+        
+        // Track product click (only if not from admin)
+        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/admin")) {
+          try {
+            await fetch("/api/analytics/product-click", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ productId: id }),
+            });
+          } catch (err) {
+            // Silently fail tracking
+            console.error("Failed to track product click:", err);
+          }
+        }
       } catch (err) {
         console.error("Failed to load product:", err);
       } finally {
@@ -130,12 +146,13 @@ export default function ProductDetailPage({
           {/* Image Gallery */}
           <div>
             {/* Primary Image */}
-            <div className="mb-4 bg-gray-100 rounded-lg overflow-hidden">
+            <div className="mb-4 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center min-h-[500px]">
               {primaryImage ? (
                 <img
                   src={primaryImage}
                   alt={product.title}
-                  className="w-full h-96 object-cover"
+                  className="w-full h-auto max-h-[600px] object-contain"
+                  loading="eager"
                 />
               ) : (
                 <div className="w-full h-96 flex items-center justify-center text-gray-400">
@@ -172,7 +189,8 @@ export default function ProductDetailPage({
                     <img
                       src={img.url}
                       alt={`${product.title} - Image ${index + 1}`}
-                      className="w-full h-20 object-cover"
+                      className="w-full h-20 object-contain bg-gray-50"
+                      loading="lazy"
                     />
                   </button>
                 ))}
@@ -268,9 +286,6 @@ export default function ProductDetailPage({
                 className="flex-1"
               >
                 {addedToCart ? "✓ Adăugat în coș!" : "Adaugă în coș"}
-              </Button>
-              <Button variant="outline" size="lg">
-                Contactează-ne
               </Button>
             </div>
           </div>

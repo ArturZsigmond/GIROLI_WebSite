@@ -15,7 +15,7 @@ model Admin {
 }
 
 model Product {
-  id          String          @id @default(uuid())
+  id          String         @id @default(uuid())
   title       String
   description String
   price       Int
@@ -26,8 +26,9 @@ model Product {
   weight      Float?
   material    String?
   images      ProductImage[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  clicks      ProductClick[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 }
 
 model ProductImage {
@@ -38,19 +39,21 @@ model ProductImage {
 }
 
 model Order {
-  id              String       @id @default(uuid())
+  id              String      @id @default(uuid())
   customerName    String
   customerEmail   String
   customerPhone   String
   customerAddress String
   totalPrice      Int
-  createdAt       DateTime @default(now())
+  status          OrderStatus @default(PENDING)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
   items           OrderItem[]
 }
 
 model OrderItem {
-  id              String  @id @default(uuid())
-  order           Order   @relation(fields: [orderId], references: [id])
+  id              String @id @default(uuid())
+  order           Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId         String
   productId       String
   quantity        Int
@@ -76,13 +79,13 @@ model Employee {
 }
 
 model ProjectShowcase {
-  id          String                @id @default(uuid())
+  id          String                 @id @default(uuid())
   title       String
   description String
   category    Category
   images      ProjectShowcaseImage[]
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
 }
 
 model ProjectShowcaseImage {
@@ -90,4 +93,25 @@ model ProjectShowcaseImage {
   projectShowcase   ProjectShowcase @relation(fields: [projectShowcaseId], references: [id], onDelete: Cascade)
   projectShowcaseId String
   url               String
+}
+
+enum OrderStatus {
+  PENDING
+  IN_PRODUCTION
+  IN_TRANSIT
+  COMPLETED
+  CANCELLED
+}
+
+model ProductClick {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  clickedAt DateTime @default(now())
+}
+
+model SiteVisit {
+  id        String   @id @default(uuid())
+  path      String
+  visitedAt DateTime @default(now())
 }

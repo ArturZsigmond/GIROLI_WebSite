@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/Button";
+import { ContactModal } from "@/components/ContactModal";
 import Link from "next/link";
 
 export default function CheckoutPage() {
@@ -22,6 +23,7 @@ export default function CheckoutPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [showContactModal, setShowContactModal] = useState(false);
 
   // Redirect if cart is empty (using useEffect to avoid render-time navigation)
   useEffect(() => {
@@ -37,6 +39,13 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if order total exceeds 5000 RON
+    if (totalPrice > 5000) {
+      setShowContactModal(true);
+      return;
+    }
+
     setIsSubmitting(true);
     setError("");
 
@@ -88,6 +97,10 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
+      <ContactModal
+        isOpen={showContactModal}
+        onClose={() => setShowContactModal(false)}
+      />
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Finalizare comandă</h1>

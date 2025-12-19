@@ -11,17 +11,17 @@ export default async function ProductsPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-semibold">Products</h1>
+        <h1 className="text-3xl font-semibold">Produse</h1>
         <Link
           href="/admin/products/new"
           className="bg-black text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 active:bg-gray-900 transition-all duration-200 transform active:scale-95 shadow-md hover:shadow-lg"
         >
-          + Add Product
+          + Adaugă Produs
         </Link>
       </div>
 
       {products.length === 0 ? (
-        <p className="text-gray-600">No products yet.</p>
+        <p className="text-gray-600">Nu există produse încă.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {products.map((p) => (
@@ -30,16 +30,17 @@ export default async function ProductsPage() {
               className="border rounded-lg shadow-sm p-4 bg-white"
             >
               {p.images?.length > 0 ? (
-                <div className="w-full aspect-square bg-gray-100 rounded-t overflow-hidden">
+                <div className="w-full aspect-square bg-gray-100 rounded-t overflow-hidden flex items-center justify-center">
                   <img
                     src={p.images[0].url}
                     alt={p.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
+                    loading="lazy"
                   />
                 </div>
               ) : (
                 <div className="w-full aspect-square bg-gray-200 rounded-t mb-3 flex items-center justify-center text-gray-500">
-                  No Image
+                  Fără imagine
                 </div>
               )}
 
@@ -52,7 +53,7 @@ export default async function ProductsPage() {
                   href={`/admin/products/${p.id}`}
                   className="text-sm text-blue-600 hover:underline"
                 >
-                  Edit Product
+                  Editează Produsul
                 </Link>
 
                 {/* DELETE BUTTON */}

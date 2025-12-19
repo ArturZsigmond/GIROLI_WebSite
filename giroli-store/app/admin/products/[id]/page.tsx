@@ -52,7 +52,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       try {
         const res = await fetch(`/api/products/${productId}`);
         if (!res.ok) {
-          alert("Product not found");
+          alert("Produsul nu a fost găsit");
           router.push("/admin/products");
           return;
         }
@@ -71,7 +71,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         setExistingImages(data.images || []);
       } catch (err) {
         console.error("Failed to load product:", err);
-        alert("Failed to load product");
+        alert("Eroare la încărcarea produsului");
         router.push("/admin/products");
       } finally {
         setLoading(false);
@@ -93,7 +93,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   }
 
   async function handleDeleteImage(imgId: string) {
-    if (!confirm("Are you sure you want to delete this image?")) return;
+    if (!confirm("Ești sigur că vrei să ștergi această imagine?")) return;
 
     try {
       const res = await fetch(`/api/products/${productId}/images/${imgId}`, {
@@ -103,11 +103,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       if (res.ok) {
         setExistingImages(existingImages.filter((img) => img.id !== imgId));
       } else {
-        alert("Failed to delete image");
+        alert("Eroare la ștergerea imaginii");
       }
     } catch (err) {
       console.error("Failed to delete image:", err);
-      alert("Failed to delete image");
+      alert("Eroare la ștergerea imaginii");
     }
   }
 
@@ -133,11 +133,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         if (fileInput) fileInput.value = "";
       } else {
         const error = await res.json();
-        alert(error.error || "Failed to add images");
+        alert(error.error || "Eroare la adăugarea imaginilor");
       }
     } catch (err) {
       console.error("Failed to add images:", err);
-      alert("Failed to add images");
+      alert("Eroare la adăugarea imaginilor");
     }
   }
 
@@ -166,7 +166,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           setNewImagePreviews([]);
         } else {
           const error = await addRes.json();
-          alert(error.error || "Failed to add images");
+          alert(error.error || "Eroare la adăugarea imaginilor");
           setSaving(false);
           return;
         }
@@ -192,15 +192,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       });
 
       if (res.ok) {
-        alert("Product updated successfully!");
+        alert("Produs actualizat cu succes!");
         router.push("/admin/products");
       } else {
         const error = await res.json();
-        alert(error.error || "Failed to update product");
+        alert(error.error || "Eroare la actualizarea produsului");
       }
     } catch (err) {
       console.error("Failed to update product:", err);
-      alert("Failed to update product");
+      alert("Eroare la actualizarea produsului");
     } finally {
       setSaving(false);
     }
@@ -209,7 +209,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   if (loading) {
     return (
       <div className="p-6">
-        <p>Loading product...</p>
+        <p>Se încarcă produsul...</p>
       </div>
     );
   }
@@ -217,18 +217,18 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   if (!product) {
     return (
       <div className="p-6">
-        <p>Product not found</p>
+        <p>Produsul nu a fost găsit</p>
       </div>
     );
   }
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Edit Product</h1>
+      <h1 className="text-2xl font-bold mb-4">Editează Produsul</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
         <div>
-          <label className="block mb-1 font-semibold">Title</label>
+          <label className="block mb-1 font-semibold">Titlu</label>
           <input
             type="text"
             className="border p-2 w-full rounded"
@@ -239,7 +239,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         </div>
 
         <div>
-          <label className="block mb-1 font-semibold">Price (RON)</label>
+          <label className="block mb-1 font-semibold">Preț (RON)</label>
           <input
             type="number"
             className="border p-2 w-full rounded"
@@ -250,7 +250,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         </div>
 
         <div>
-          <label className="block mb-1 font-semibold">Description</label>
+          <label className="block mb-1 font-semibold">Descriere</label>
           <textarea
             className="border p-2 w-full rounded"
             value={description}
@@ -261,7 +261,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         </div>
 
         <div>
-          <label className="block mb-1 font-semibold">Category</label>
+          <label className="block mb-1 font-semibold">Categorie</label>
           <select
             className="border p-2 w-full rounded"
             value={category}
@@ -278,7 +278,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block mb-1 font-semibold">Height (cm)</label>
+            <label className="block mb-1 font-semibold">Înălțime (cm)</label>
             <input
               type="number"
               step="0.01"
@@ -289,7 +289,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </div>
 
           <div>
-            <label className="block mb-1 font-semibold">Width (cm)</label>
+            <label className="block mb-1 font-semibold">Lățime (cm)</label>
             <input
               type="number"
               step="0.01"
@@ -300,7 +300,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </div>
 
           <div>
-            <label className="block mb-1 font-semibold">Depth (cm)</label>
+            <label className="block mb-1 font-semibold">Adâncime (cm)</label>
             <input
               type="number"
               step="0.01"
@@ -311,7 +311,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </div>
 
           <div>
-            <label className="block mb-1 font-semibold">Weight (kg)</label>
+            <label className="block mb-1 font-semibold">Greutate (kg)</label>
             <input
               type="number"
               step="0.01"
@@ -334,9 +334,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
         {/* Existing Images */}
         <div>
-          <label className="block mb-1 font-semibold">Existing Images</label>
+          <label className="block mb-1 font-semibold">Imagini Existente</label>
           {existingImages.length === 0 ? (
-            <p className="text-gray-500 text-sm">No images</p>
+            <p className="text-gray-500 text-sm">Fără imagini</p>
           ) : (
             <div className="grid grid-cols-3 gap-3 mt-2">
               {existingImages.map((img) => (
@@ -363,7 +363,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         {existingImages.length < 6 && (
           <div>
             <label className="block mb-1 font-semibold">
-              Add New Images (max {6 - existingImages.length} more)
+              Adaugă Imagini Noi (max {6 - existingImages.length} în plus)
             </label>
             <input
               id="new-images"
@@ -391,7 +391,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   onClick={handleAddNewImages}
                   className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 active:bg-green-800 transition-all duration-200 transform active:scale-95 shadow-md hover:shadow-lg"
                 >
-                  Add These Images
+                  Adaugă Aceste Imagini
                 </button>
               </div>
             )}
@@ -404,7 +404,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             disabled={saving}
             className="bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-800 active:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform active:scale-95 disabled:transform-none shadow-md hover:shadow-lg"
           >
-            {saving ? "Saving..." : "Save Changes"}
+            {saving ? "Se salvează..." : "Salvează Modificările"}
           </button>
 
           <button
@@ -412,7 +412,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             onClick={() => router.push("/admin/products")}
             className="bg-gray-400 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-500 active:bg-gray-600 transition-all duration-200 transform active:scale-95 shadow-md hover:shadow-lg"
           >
-            Cancel
+            Anulează
           </button>
         </div>
       </form>

@@ -73,12 +73,13 @@ export default function CartPage() {
                 className="bg-white border border-gray-200 rounded-lg shadow-md p-6 flex gap-4"
               >
                 {/* Product Image */}
-                <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center">
                   {item.imageUrl ? (
                     <img
                       src={item.imageUrl}
                       alt={item.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">

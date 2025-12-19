@@ -40,16 +40,42 @@ export function ProductCard({ product }: { product: Product }) {
     setTimeout(() => setAddedToCart(false), 500);
   };
 
+  const handleProductClick = async () => {
+    // Don't track clicks from admin pages
+    if (typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) {
+      return;
+    }
+    
+    // Track product click
+    try {
+      await fetch("/api/analytics/product-click", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ productId: product.id }),
+      });
+    } catch (err) {
+      // Silently fail tracking
+      console.error("Failed to track product click:", err);
+    }
+  };
+
   return (
     <div className="border rounded-lg shadow-sm bg-white hover:shadow-xl transition-shadow duration-200 overflow-hidden group flex flex-col max-w-sm mx-auto w-full">
-      <Link href={`/products/${product.id}`} className="flex-1 flex flex-col">
+      <Link 
+        href={`/products/${product.id}`} 
+        className="flex-1 flex flex-col"
+        onClick={handleProductClick}
+      >
         {/* Product Image */}
-        <div className="relative w-full aspect-square bg-gray-100 overflow-hidden max-h-64">
+        <div className="relative w-full aspect-square bg-gray-100 overflow-hidden">
           {product.images && product.images.length > 0 ? (
             <img
               src={product.images[0].url}
               alt={product.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
+              loading="lazy"
             />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center text-gray-500">
