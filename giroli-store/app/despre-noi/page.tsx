@@ -56,10 +56,28 @@ export default async function DespreNoiPage() {
   }, {} as Record<string, ProjectShowcase[]>);
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <Header />
+    <div className="min-h-screen flex flex-col relative overflow-x-hidden">
+      {/* Wood Background */}
+      <div 
+        className="fixed inset-0 z-0 w-full h-full"
+        style={{
+          backgroundImage: 'url(https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+          backgroundRepeat: 'no-repeat',
+        }}
+        aria-hidden="true"
+      >
+        {/* Overlay for better readability - more subtle wood texture */}
+        <div className="absolute inset-0 bg-white/70"></div>
+      </div>
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
+      {/* Content */}
+      <div className="relative z-10 flex flex-col min-h-screen bg-transparent">
+        <Header />
+
+        <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
         {/* About Company Section */}
         <section className="mb-16">
           <h1 className="text-4xl font-bold text-gray-800 mb-6">Despre Noi</h1>
@@ -133,15 +151,16 @@ export default async function DespreNoiPage() {
             ))
           )}
         </section>
-      </main>
+        </main>
 
-      <footer className="bg-gray-100 border-t border-gray-200 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <p className="text-center text-gray-600">
-            © 2025 Ciroli CNC. Toate drepturile rezervate.
-          </p>
-        </div>
-      </footer>
+        <footer className="bg-white/90 backdrop-blur-sm border-t border-gray-200 mt-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <p className="text-center text-gray-600">
+              © {new Date().getFullYear()} Giroli Mob. Toate drepturile rezervate.
+            </p>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }
