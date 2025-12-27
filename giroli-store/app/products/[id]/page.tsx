@@ -32,6 +32,14 @@ interface Product {
   categories?: ProductCategory[];
 }
 
+interface Review {
+  id: string;
+  rating: number;
+  comment: string;
+  customerName: string;
+  createdAt: string;
+}
+
 export default function ProductDetailPage({
   params,
 }: {
@@ -43,6 +51,15 @@ export default function ProductDetailPage({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewOrderNumber, setReviewOrderNumber] = useState("");
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState("");
   
   // All hooks must be called before any conditional returns
   const addToCart = useCartStore((state) => state.addItem);
@@ -57,6 +74,19 @@ export default function ProductDetailPage({
         }
         const data: Product = await res.json();
         setProduct(data);
+        
+        // Load reviews
+        try {
+          const reviewsRes = await fetch(`/api/products/${id}/reviews`);
+          if (reviewsRes.ok) {
+            const reviewsData = await reviewsRes.json();
+            setReviews(reviewsData.reviews || []);
+            setAverageRating(reviewsData.averageRating || 0);
+            setTotalReviews(reviewsData.totalReviews || 0);
+          }
+        } catch (err) {
+          console.error("Failed to load reviews:", err);
+        }
         
         // Track product click (only if not from admin)
         if (typeof window !== "undefined" && !window.location.pathname.startsWith("/admin")) {
@@ -95,6 +125,82 @@ export default function ProductDetailPage({
     setQuantity(1); // Reset quantity after adding
     // Reset feedback after a brief moment, but don't disable the button
     setTimeout(() => setAddedToCart(false), 2000);
+  };
+
+  const handleReviewInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+    // Remove any # symbols
+    value = value.replace(/#/g, "");
+    // Limit to 8 characters
+    if (value.length > 8) {
+      value = value.slice(0, 8);
+    }
+    // Convert to uppercase
+    value = value.toUpperCase();
+    setReviewOrderNumber(value);
+    setReviewError("");
+  };
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!reviewOrderNumber.trim()) {
+      setReviewError("Introduceți numărul comenzii");
+      return;
+    }
+
+    if (reviewRating === 0) {
+      setReviewError("Selectați un rating");
+      return;
+    }
+
+    if (!reviewComment.trim()) {
+      setReviewError("Introduceți un comentariu");
+      return;
+    }
+
+    setSubmittingReview(true);
+    setReviewError("");
+
+    try {
+      const response = await fetch(`/api/products/${id}/reviews`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderNumber: reviewOrderNumber,
+          rating: reviewRating,
+          comment: reviewComment,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        setReviewError(errorData.error || "Eroare la trimiterea recenziei");
+        return;
+      }
+
+      // Reload reviews
+      const reviewsRes = await fetch(`/api/products/${id}/reviews`);
+      if (reviewsRes.ok) {
+        const reviewsData = await reviewsRes.json();
+        setReviews(reviewsData.reviews || []);
+        setAverageRating(reviewsData.averageRating || 0);
+        setTotalReviews(reviewsData.totalReviews || 0);
+      }
+
+      // Reset form
+      setReviewOrderNumber("");
+      setReviewRating(0);
+      setReviewComment("");
+      setShowReviewForm(false);
+    } catch (err) {
+      console.error("Error submitting review:", err);
+      setReviewError("Eroare la trimiterea recenziei");
+    } finally {
+      setSubmittingReview(false);
+    }
   };
 
   if (loading) {
@@ -226,9 +332,39 @@ export default function ProductDetailPage({
               <h1 className="text-3xl font-bold text-gray-800 mb-4">
                 {product.title}
               </h1>
-              <div className="text-4xl font-bold text-blue-700 mb-6">
+              <div className="text-4xl font-bold text-blue-700 mb-2">
                 {product.price} RON
               </div>
+              {totalReviews > 0 && (
+                <a
+                  href="#reviews"
+                  className="flex items-center gap-2 mb-6 hover:opacity-80 transition-opacity cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                >
+                  <div className="flex items-center">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <svg
+                        key={star}
+                        className={`w-5 h-5 ${
+                          star <= Math.round(averageRating)
+                            ? "text-yellow-400 fill-current"
+                            : "text-gray-300"
+                        }`}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                  </div>
+                  <span className="text-gray-600">
+                    {averageRating.toFixed(1)} ({totalReviews} {totalReviews === 1 ? "recenzie" : "recenzii"})
+                  </span>
+                </a>
+              )}
             </div>
 
             {/* Description */}
@@ -344,13 +480,186 @@ export default function ProductDetailPage({
             </div>
           </div>
         </div>
+
+        {/* Reviews Section */}
+        <div id="reviews" className="mt-12 border-t border-gray-200 pt-8 scroll-mt-8">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Recenzii</h2>
+              {totalReviews > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <svg
+                        key={star}
+                        className={`w-5 h-5 ${
+                          star <= Math.round(averageRating)
+                            ? "text-yellow-400 fill-current"
+                            : "text-gray-300"
+                        }`}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                  </div>
+                  <span className="text-gray-600">
+                    {averageRating.toFixed(1)} ({totalReviews} {totalReviews === 1 ? "recenzie" : "recenzii"})
+                  </span>
+                </div>
+              )}
+            </div>
+            <Button
+              onClick={() => setShowReviewForm(!showReviewForm)}
+              variant="outline"
+              size="md"
+            >
+              {showReviewForm ? "Anulează" : "Lasă o recenzie"}
+            </Button>
+          </div>
+
+          {/* Review Form */}
+          {showReviewForm && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-8">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Lasă o recenzie</h3>
+              <form onSubmit={handleSubmitReview} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Număr comandă *
+                  </label>
+                  <div className="flex items-center">
+                    <span className="text-gray-500 font-semibold mr-2">#</span>
+                    <input
+                      type="text"
+                      value={reviewOrderNumber}
+                      onChange={handleReviewInputChange}
+                      placeholder="6A20FFA1"
+                      maxLength={8}
+                      className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                      style={{ textTransform: "uppercase" }}
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Doar pentru comenzi finalizate
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Rating *
+                  </label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewRating(star)}
+                        className={`w-10 h-10 rounded-full transition-colors ${
+                          star <= reviewRating
+                            ? "bg-yellow-400 text-white"
+                            : "bg-gray-200 text-gray-400 hover:bg-gray-300"
+                        }`}
+                      >
+                        <svg
+                          className="w-6 h-6 mx-auto"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Comentariu *
+                  </label>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    rows={4}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Spuneți-ne părerea dvs. despre acest produs..."
+                    required
+                  />
+                </div>
+
+                {reviewError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    {reviewError}
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="md"
+                  disabled={submittingReview}
+                >
+                  {submittingReview ? "Se trimite..." : "Trimite recenzia"}
+                </Button>
+              </form>
+            </div>
+          )}
+
+          {/* Reviews List */}
+          {reviews.length > 0 ? (
+            <div className="space-y-6">
+              {reviews.map((review) => (
+                <div
+                  key={review.id}
+                  className="bg-white border border-gray-200 rounded-lg p-6"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <p className="font-semibold text-gray-800">{review.customerName}</p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(review.createdAt).toLocaleDateString("ro-RO", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <svg
+                          key={star}
+                          className={`w-5 h-5 ${
+                            star <= review.rating
+                              ? "text-yellow-400 fill-current"
+                              : "text-gray-300"
+                          }`}
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>Nu există recenzii pentru acest produs.</p>
+              <p className="text-sm mt-2">Fii primul care lasă o recenzie!</p>
+            </div>
+          )}
+        </div>
       </main>
 
       {/* Footer */}
       <footer className="bg-gray-100 border-t border-gray-200 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <p className="text-center text-gray-600">
-            © {new Date().getFullYear()} Giroli CNC. Toate drepturile rezervate.
+            © {new Date().getFullYear()} Giroli Mob. Toate drepturile rezervate.
           </p>
         </div>
       </footer>
