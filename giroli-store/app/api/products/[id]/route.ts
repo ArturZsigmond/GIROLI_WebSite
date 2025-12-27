@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { r2Client, R2_BUCKET } from "@/lib/r2";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { Category } from "@prisma/client";
 
 export async function GET(
   req: Request,
