@@ -18,7 +18,7 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4 md:py-6">
         <div className="flex justify-between items-center gap-2 sm:gap-4">
           <Link href="/" className="text-xl sm:text-2xl md:text-3xl font-bold hover:text-blue-200 transition-colors whitespace-nowrap">
-            Giroli CNC
+            Giroli Mob
           </Link>
           <nav className="flex gap-2 sm:gap-4 md:gap-6 items-center">
             <Link
@@ -26,6 +26,12 @@ export function Header() {
               className="text-sm sm:text-base hover:text-blue-200 transition-colors font-medium whitespace-nowrap"
             >
               Acasă
+            </Link>
+            <Link
+              href="/comenzile-mele"
+              className="text-sm sm:text-base hover:text-blue-200 transition-colors font-medium whitespace-nowrap"
+            >
+              Comenzile mele
             </Link>
             <Link
               href="/despre-noi"

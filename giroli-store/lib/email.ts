@@ -87,7 +87,7 @@ export async function sendOrderConfirmationEmail(order: OrderData, productDetail
           </div>
 
           <p style="font-size: 16px; margin-top: 30px; padding: 20px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
-            <strong>Notă:</strong> Vă vom contacta în cel mai scurt timp pentru a confirma comanda și a discuta detaliile de livrare.
+            <strong>Verificare comandă:</strong> Puteți verifica starea comenzii în secțiunea "Comenzile mele" de pe site, introducând codul comenzii <strong>#${order.id.slice(0, 8).toUpperCase()}</strong>.
           </p>
 
           <p style="font-size: 16px; margin-top: 30px;">
