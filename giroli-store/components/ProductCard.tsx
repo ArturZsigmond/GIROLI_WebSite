@@ -11,6 +11,11 @@ interface ProductImage {
   url: string;
 }
 
+interface ProductCategory {
+  id: string;
+  category: string;
+}
+
 interface Product {
   id: string;
   title: string;
@@ -18,6 +23,7 @@ interface Product {
   price: number;
   category: string;
   images: ProductImage[];
+  categories?: ProductCategory[];
 }
 
 export function ProductCard({ product }: { product: Product }) {
@@ -28,16 +34,17 @@ export function ProductCard({ product }: { product: Product }) {
     e.preventDefault();
     e.stopPropagation();
     
+    // Add 1 item to cart (quantity selector only on detail page)
     addToCart({
       id: product.id,
       title: product.title,
       price: product.price,
       imageUrl: product.images?.[0]?.url || "",
-    });
+    }, 1);
     
     setAddedToCart(true);
     // Reset feedback after a brief moment, but don't disable the button
-    setTimeout(() => setAddedToCart(false), 500);
+    setTimeout(() => setAddedToCart(false), 2000);
   };
 
   const handleProductClick = async () => {
@@ -108,9 +115,19 @@ export function ProductCard({ product }: { product: Product }) {
             <span className="text-xl font-bold text-blue-700">
               {product.price} RON
             </span>
-            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-              {getCategoryLabel(product.category)}
-            </span>
+            <div className="flex flex-wrap gap-1">
+              {(product.categories && product.categories.length > 0
+                ? product.categories.map((pc) => pc.category)
+                : [product.category]
+              ).map((cat) => (
+                <span
+                  key={cat}
+                  className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded"
+                >
+                  {getCategoryLabel(cat)}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </Link>

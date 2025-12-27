@@ -9,6 +9,11 @@ interface ProductImage {
   url: string;
 }
 
+interface ProductCategory {
+  id: string;
+  category: Category;
+}
+
 interface Product {
   id: string;
   title: string;
@@ -21,6 +26,7 @@ interface Product {
   weight?: number | null;
   material?: string | null;
   images: ProductImage[];
+  categories?: ProductCategory[];
 }
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
@@ -35,6 +41,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<Category>("KITCHEN");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [height, setHeight] = useState("");
   const [width, setWidth] = useState("");
   const [depth, setDepth] = useState("");
@@ -63,6 +70,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         setPrice(data.price.toString());
         setDescription(data.description);
         setCategory(data.category);
+        // Set selected categories from product categories or fallback to single category
+        setSelectedCategories(
+          data.categories && data.categories.length > 0
+            ? data.categories.map((pc) => pc.category)
+            : [data.category]
+        );
         setHeight(data.height?.toString() || "");
         setWidth(data.width?.toString() || "");
         setDepth(data.depth?.toString() || "");
@@ -143,6 +156,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    
+    if (selectedCategories.length === 0) {
+      alert("Selectează cel puțin o categorie");
+      return;
+    }
+    
     setSaving(true);
 
     try {
@@ -180,7 +199,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           title,
           price: Number(price),
           description,
-          category,
+          category: selectedCategories.length > 0 ? selectedCategories[0] : category,
+          categories: selectedCategories.length > 0 ? selectedCategories : [category],
           height: height ? Number(height) : null,
           width: width ? Number(width) : null,
           depth: depth ? Number(depth) : null,
@@ -261,11 +281,18 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         </div>
 
         <div>
-          <label className="block mb-1 font-semibold">Categorie</label>
+          <label className="block mb-1 font-semibold">Categorie principală</label>
           <select
             className="border p-2 w-full rounded"
             value={category}
-            onChange={(e) => setCategory(e.target.value as Category)}
+            onChange={(e) => {
+              const newCategory = e.target.value as Category;
+              setCategory(newCategory);
+              // Add to selected categories if not already present
+              if (!selectedCategories.includes(newCategory)) {
+                setSelectedCategories([...selectedCategories, newCategory]);
+              }
+            }}
             required
           >
             <option value="KITCHEN">Bucătărie</option>
@@ -274,6 +301,50 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             <option value="LIVING">Living</option>
             <option value="GENERAL">General</option>
           </select>
+        </div>
+
+        <div>
+          <label className="block mb-1 font-semibold">Categorii (poți selecta mai multe)</label>
+          <div className="space-y-2 border p-3 rounded">
+            {["KITCHEN", "BATHROOM", "BEDROOM", "LIVING", "GENERAL"].map((cat) => {
+              const labels: Record<string, string> = {
+                KITCHEN: "Bucătărie",
+                BATHROOM: "Baie",
+                BEDROOM: "Dormitor",
+                LIVING: "Living",
+                GENERAL: "General",
+              };
+              return (
+                <label key={cat} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedCategories.includes(cat)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedCategories([...selectedCategories, cat]);
+                        // Update primary category if none selected
+                        if (selectedCategories.length === 0) {
+                          setCategory(cat as Category);
+                        }
+                      } else {
+                        const newCategories = selectedCategories.filter((c) => c !== cat);
+                        setSelectedCategories(newCategories);
+                        // If primary category is removed, set first remaining as primary
+                        if (category === cat && newCategories.length > 0) {
+                          setCategory(newCategories[0] as Category);
+                        }
+                      }
+                    }}
+                    className="w-4 h-4"
+                  />
+                  <span>{labels[cat]}</span>
+                </label>
+              );
+            })}
+          </div>
+          {selectedCategories.length === 0 && (
+            <p className="text-red-500 text-sm mt-1">Selectează cel puțin o categorie</p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">

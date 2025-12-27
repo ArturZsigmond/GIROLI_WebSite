@@ -15,11 +15,11 @@ model Admin {
 }
 
 model Product {
-  id          String         @id @default(uuid())
+  id          String            @id @default(uuid())
   title       String
   description String
   price       Int
-  category    Category
+  category    Category          // Keep for backward compatibility
   height      Float?
   width       Float?
   depth       Float?
@@ -27,8 +27,21 @@ model Product {
   material    String?
   images      ProductImage[]
   clicks      ProductClick[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  categories  ProductCategory[] // Multiple categories support
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model ProductCategory {
+  id        String   @id @default(uuid())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  category  Category
+  createdAt DateTime @default(now())
+
+  @@unique([productId, category])
+  @@index([productId])
+  @@index([category])
 }
 
 model ProductImage {

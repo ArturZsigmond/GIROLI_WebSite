@@ -15,7 +15,10 @@ export async function GET(
 
   const product = await prisma.product.findUnique({
     where: { id },
-    include: { images: true },
+    include: { 
+      images: true,
+      categories: true
+    },
   });
 
   if (!product) {
@@ -91,8 +94,20 @@ export async function PATCH(
         },
         create: data.newImages?.map((url: string) => ({ url })) || [],
       },
+      // Update categories if provided
+      categories: data.categories
+        ? {
+            deleteMany: {},
+            create: (Array.isArray(data.categories) ? data.categories : [data.categories]).map(
+              (cat: Category) => ({ category: cat })
+            ),
+          }
+        : undefined,
     },
-    include: { images: true },
+    include: { 
+      images: true,
+      categories: true
+    },
   });
 
   return NextResponse.json(updated);

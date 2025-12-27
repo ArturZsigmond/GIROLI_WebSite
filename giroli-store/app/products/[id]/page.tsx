@@ -12,6 +12,11 @@ interface ProductImage {
   url: string;
 }
 
+interface ProductCategory {
+  id: string;
+  category: string;
+}
+
 interface Product {
   id: string;
   title: string;
@@ -24,6 +29,7 @@ interface Product {
   weight?: number | null;
   material?: string | null;
   images: ProductImage[];
+  categories?: ProductCategory[];
 }
 
 export default function ProductDetailPage({
@@ -36,6 +42,7 @@ export default function ProductDetailPage({
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [quantity, setQuantity] = useState(1);
   
   // All hooks must be called before any conditional returns
   const addToCart = useCartStore((state) => state.addItem);
@@ -77,15 +84,17 @@ export default function ProductDetailPage({
 
   const handleAddToCart = () => {
     if (!product) return;
+    // Add the selected quantity to cart
     addToCart({
       id: product.id,
       title: product.title,
       price: product.price,
       imageUrl: product.images?.[0]?.url || "",
-    });
+    }, quantity);
     setAddedToCart(true);
+    setQuantity(1); // Reset quantity after adding
     // Reset feedback after a brief moment, but don't disable the button
-    setTimeout(() => setAddedToCart(false), 500);
+    setTimeout(() => setAddedToCart(false), 2000);
   };
 
   if (loading) {
@@ -201,9 +210,19 @@ export default function ProductDetailPage({
           {/* Product Info */}
           <div>
             <div className="mb-4">
-              <span className="inline-block bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full mb-2">
-                {getCategoryLabel(product.category)}
-              </span>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {(product.categories && product.categories.length > 0
+                  ? product.categories.map((pc) => pc.category)
+                  : [product.category]
+                ).map((cat) => (
+                  <span
+                    key={cat}
+                    className="inline-block bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full"
+                  >
+                    {getCategoryLabel(cat)}
+                  </span>
+                ))}
+              </div>
               <h1 className="text-3xl font-bold text-gray-800 mb-4">
                 {product.title}
               </h1>
@@ -278,14 +297,49 @@ export default function ProductDetailPage({
             )}
 
             {/* Action Buttons */}
-            <div className="flex gap-4">
+            <div className="flex flex-col gap-4">
+              {/* Quantity Selector */}
+              <div className="flex items-center gap-4">
+                <label htmlFor="quantity" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                  Cantitate:
+                </label>
+                <div className="flex items-center gap-1 border border-gray-300 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-4 py-2 hover:bg-gray-100 transition-colors font-semibold text-gray-700"
+                  >
+                    −
+                  </button>
+                  <input
+                    id="quantity"
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={quantity}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 1;
+                      setQuantity(Math.min(50, Math.max(1, val)));
+                    }}
+                    className="w-20 text-center border-0 focus:ring-2 focus:ring-blue-500 focus:outline-none py-2 font-semibold"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(Math.min(50, quantity + 1))}
+                    className="px-4 py-2 hover:bg-gray-100 transition-colors font-semibold text-gray-700"
+                  >
+                    +
+                  </button>
+                </div>
+                <span className="text-sm text-gray-500">(max 50)</span>
+              </div>
               <Button
                 onClick={handleAddToCart}
                 variant="primary"
                 size="lg"
-                className="flex-1"
+                className="w-full"
               >
-                {addedToCart ? "✓ Adăugat în coș!" : "Adaugă în coș"}
+                {addedToCart ? `✓ Adăugat ${quantity} bucăți în coș!` : `Adaugă ${quantity} în coș`}
               </Button>
             </div>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
 import { Header } from "@/components/Header";
@@ -13,32 +13,91 @@ export default function CheckoutPage() {
   const items = useCartStore((state) => state.items);
   const totalPrice = useCartStore((state) => state.getTotalPrice());
   const clearCart = useCartStore((state) => state.clearCart);
+  const isRedirectingRef = useRef(false);
 
   const [formData, setFormData] = useState({
     customerName: "",
     customerEmail: "",
     customerPhone: "",
-    customerAddress: "",
+    street: "",
+    city: "",
+    county: "",
+    postalCode: "",
   });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [showContactModal, setShowContactModal] = useState(false);
 
   // Redirect if cart is empty (using useEffect to avoid render-time navigation)
+  // But don't redirect if we're in the process of submitting an order or redirecting
   useEffect(() => {
-    if (items.length === 0) {
+    if (items.length === 0 && !isSubmitting && !isRedirectingRef.current) {
       router.push("/cart");
     }
-  }, [items.length, router]);
+  }, [items.length, router, isSubmitting]);
 
   // Don't render if cart is empty
   if (items.length === 0) {
     return null;
   }
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    // Name validation
+    if (!formData.customerName.trim()) {
+      newErrors.customerName = "Numele este obligatoriu";
+    } else if (formData.customerName.trim().length < 2) {
+      newErrors.customerName = "Numele trebuie să aibă cel puțin 2 caractere";
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.customerEmail.trim()) {
+      newErrors.customerEmail = "Email-ul este obligatoriu";
+    } else if (!emailRegex.test(formData.customerEmail)) {
+      newErrors.customerEmail = "Email-ul nu este valid";
+    }
+
+    // Phone validation (Romanian phone format)
+    const phoneRegex = /^(\+4|0)[0-9]{9}$/;
+    const cleanPhone = formData.customerPhone.replace(/\s/g, "");
+    if (!formData.customerPhone.trim()) {
+      newErrors.customerPhone = "Telefonul este obligatoriu";
+    } else if (!phoneRegex.test(cleanPhone)) {
+      newErrors.customerPhone = "Telefonul trebuie să fie în format românesc (ex: 0712345678)";
+    }
+
+    // Address validation
+    if (!formData.street.trim()) {
+      newErrors.street = "Strada este obligatorie";
+    }
+    if (!formData.city.trim()) {
+      newErrors.city = "Orașul este obligatoriu";
+    }
+    if (!formData.county.trim()) {
+      newErrors.county = "Județul este obligatoriu";
+    }
+    if (!formData.postalCode.trim()) {
+      newErrors.postalCode = "Codul poștal este obligatoriu";
+    } else if (!/^\d{6}$/.test(formData.postalCode.replace(/\s/g, ""))) {
+      newErrors.postalCode = "Codul poștal trebuie să fie format din 6 cifre";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate form
+    if (!validateForm()) {
+      return;
+    }
     
     // Check if order total exceeds 5000 RON
     if (totalPrice > 5000) {
@@ -50,11 +109,14 @@ export default function CheckoutPage() {
     setError("");
 
     try {
+      // Construct full address from components
+      const customerAddress = `${formData.street}, ${formData.city}, ${formData.county}, ${formData.postalCode}`;
+
       const orderData = {
-        customerName: formData.customerName,
-        customerEmail: formData.customerEmail,
-        customerPhone: formData.customerPhone,
-        customerAddress: formData.customerAddress,
+        customerName: formData.customerName.trim(),
+        customerEmail: formData.customerEmail.trim(),
+        customerPhone: formData.customerPhone.replace(/\s/g, ""),
+        customerAddress,
         totalPrice,
         items: items.map((item) => ({
           productId: item.id,
@@ -78,9 +140,12 @@ export default function CheckoutPage() {
 
       const order = await response.json();
 
+      // Mark that we're redirecting to prevent the useEffect from interfering
+      isRedirectingRef.current = true;
+      
       // Clear cart and redirect to success page
       clearCart();
-      router.push(`/checkout/success?orderId=${order.id}`);
+      router.replace(`/checkout/success?orderId=${order.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Eroare la plasarea comenzii");
       setIsSubmitting(false);
@@ -130,9 +195,14 @@ export default function CheckoutPage() {
                   required
                   value={formData.customerName}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className={`w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.customerName ? "border-red-500" : "border-gray-300"
+                  }`}
                   placeholder="Ion Popescu"
                 />
+                {errors.customerName && (
+                  <p className="text-red-500 text-sm mt-1">{errors.customerName}</p>
+                )}
               </div>
 
               <div>
@@ -146,9 +216,14 @@ export default function CheckoutPage() {
                   required
                   value={formData.customerEmail}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className={`w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.customerEmail ? "border-red-500" : "border-gray-300"
+                  }`}
                   placeholder="ion.popescu@example.com"
                 />
+                {errors.customerEmail && (
+                  <p className="text-red-500 text-sm mt-1">{errors.customerEmail}</p>
+                )}
               </div>
 
               <div>
@@ -161,26 +236,112 @@ export default function CheckoutPage() {
                   name="customerPhone"
                   required
                   value={formData.customerPhone}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                    setFormData({ ...formData, customerPhone: value });
+                  }}
+                  className={`w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                    errors.customerPhone ? "border-red-500" : "border-gray-300"
+                  }`}
                   placeholder="0712345678"
                 />
+                {errors.customerPhone && (
+                  <p className="text-red-500 text-sm mt-1">{errors.customerPhone}</p>
+                )}
               </div>
 
-              <div>
-                <label htmlFor="customerAddress" className="block text-sm font-medium text-gray-700 mb-2">
-                  Adresă de livrare *
-                </label>
-                <textarea
-                  id="customerAddress"
-                  name="customerAddress"
-                  required
-                  rows={4}
-                  value={formData.customerAddress}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Strada, număr, oraș, județ, cod poștal"
-                />
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800">Adresă de livrare *</h3>
+                
+                <div>
+                  <label htmlFor="street" className="block text-sm font-medium text-gray-700 mb-2">
+                    Stradă și număr *
+                  </label>
+                  <input
+                    type="text"
+                    id="street"
+                    name="street"
+                    required
+                    value={formData.street}
+                    onChange={handleChange}
+                    className={`w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.street ? "border-red-500" : "border-gray-300"
+                    }`}
+                    placeholder="Strada Exemplu, nr. 10"
+                  />
+                  {errors.street && (
+                    <p className="text-red-500 text-sm mt-1">{errors.street}</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
+                      Oraș *
+                    </label>
+                    <input
+                      type="text"
+                      id="city"
+                      name="city"
+                      required
+                      value={formData.city}
+                      onChange={handleChange}
+                      className={`w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.city ? "border-red-500" : "border-gray-300"
+                      }`}
+                      placeholder="București"
+                    />
+                    {errors.city && (
+                      <p className="text-red-500 text-sm mt-1">{errors.city}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="county" className="block text-sm font-medium text-gray-700 mb-2">
+                      Județ *
+                    </label>
+                    <input
+                      type="text"
+                      id="county"
+                      name="county"
+                      required
+                      value={formData.county}
+                      onChange={handleChange}
+                      className={`w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.county ? "border-red-500" : "border-gray-300"
+                      }`}
+                      placeholder="București"
+                    />
+                    {errors.county && (
+                      <p className="text-red-500 text-sm mt-1">{errors.county}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-2">
+                    Cod poștal *
+                  </label>
+                  <input
+                    type="text"
+                    id="postalCode"
+                    name="postalCode"
+                    required
+                    maxLength={6}
+                    value={formData.postalCode}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                      setFormData({ ...formData, postalCode: value });
+                    }}
+                    className={`w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.postalCode ? "border-red-500" : "border-gray-300"
+                    }`}
+                    placeholder="123456"
+                  />
+                  {errors.postalCode && (
+                    <p className="text-red-500 text-sm mt-1">{errors.postalCode}</p>
+                  )}
+                </div>
               </div>
 
               <Button

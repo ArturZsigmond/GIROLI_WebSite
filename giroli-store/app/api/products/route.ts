@@ -17,7 +17,10 @@ export async function GET(req: Request) {
       skip,
       take: limit,
       orderBy: { createdAt: "desc" },
-      include: { images: true },
+      include: { 
+        images: true,
+        categories: true
+      },
     }),
     prisma.product.count(),
   ]);
@@ -41,6 +44,10 @@ export async function POST(req: Request) {
   const price = Number(form.get("price"));
   const description = form.get("description") as string;
   const category = form.get("category") as Category;
+  
+  // Get multiple categories if provided
+  const categories = form.getAll("categories") as Category[];
+  const selectedCategories = categories.length > 0 ? categories : [category];
 
   // Read ALL images (max 6)
   const files = form.getAll("images") as File[];
@@ -83,18 +90,24 @@ export async function POST(req: Request) {
     uploadedImages.push({ url });
   }
 
-  // Create product + all images records
+  // Create product + all images records + categories
   const product = await prisma.product.create({
     data: {
       title,
       price,
       description,
-      category,
+      category, // Keep for backward compatibility
       images: {
         create: uploadedImages
+      },
+      categories: {
+        create: selectedCategories.map((cat) => ({ category: cat }))
       }
     },
-    include: { images: true }
+    include: { 
+      images: true,
+      categories: true
+    }
   });
 
   return NextResponse.json(product);

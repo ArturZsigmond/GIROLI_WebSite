@@ -20,7 +20,10 @@ interface Product {
 async function getProducts() {
   const products = await prisma.product.findMany({
     orderBy: { createdAt: "desc" },
-    include: { images: true },
+    include: { 
+      images: true,
+      categories: true
+    },
   });
 
   return products as Product[];

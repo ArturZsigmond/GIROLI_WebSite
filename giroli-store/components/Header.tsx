@@ -29,7 +29,7 @@ export function Header() {
             </Link>
             <Link
               href="/despre-noi"
-              className="text-sm sm:text-base hover:text-blue-200 transition-colors font-medium whitespace-nowrap hidden sm:inline"
+              className="text-sm sm:text-base hover:text-blue-200 transition-colors font-medium whitespace-nowrap"
             >
               Despre Noi
             </Link>

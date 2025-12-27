@@ -10,6 +10,7 @@ export default function NewProductPage() {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("KITCHEN");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(["KITCHEN"]);
 
   // MULTIPLE IMAGES
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -28,11 +29,19 @@ export default function NewProductPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    if (selectedCategories.length === 0) {
+      alert("Selectează cel puțin o categorie");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("title", title);
     formData.append("price", price);
     formData.append("description", description);
-    formData.append("category", category);
+    formData.append("category", category); // Keep for backward compatibility
+    
+    // Append all selected categories
+    selectedCategories.forEach((cat) => formData.append("categories", cat));
 
     // Append ALL selected images
     imageFiles.forEach((file) => formData.append("images", file));
@@ -78,20 +87,74 @@ export default function NewProductPage() {
           required
         />
 
-        {/* CATEGORY DROPDOWN */}
-        <select
-          name="category"
-          required
-          className="border p-2 w-full"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        >
-          <option value="KITCHEN">Bucătărie</option>
-          <option value="BATHROOM">Baie</option>
-          <option value="BEDROOM">Dormitor</option>
-          <option value="LIVING">Living</option>
-          <option value="GENERAL">General</option>
-        </select>
+        {/* PRIMARY CATEGORY (for backward compatibility) */}
+        <div>
+          <label className="block mb-1 font-semibold">Categorie principală</label>
+          <select
+            name="category"
+            required
+            className="border p-2 w-full"
+            value={category}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              // Add to selected categories if not already present
+              if (!selectedCategories.includes(e.target.value)) {
+                setSelectedCategories([...selectedCategories, e.target.value]);
+              }
+            }}
+          >
+            <option value="KITCHEN">Bucătărie</option>
+            <option value="BATHROOM">Baie</option>
+            <option value="BEDROOM">Dormitor</option>
+            <option value="LIVING">Living</option>
+            <option value="GENERAL">General</option>
+          </select>
+        </div>
+
+        {/* MULTIPLE CATEGORIES */}
+        <div>
+          <label className="block mb-1 font-semibold">Categorii (poți selecta mai multe)</label>
+          <div className="space-y-2 border p-3 rounded">
+            {["KITCHEN", "BATHROOM", "BEDROOM", "LIVING", "GENERAL"].map((cat) => {
+              const labels: Record<string, string> = {
+                KITCHEN: "Bucătărie",
+                BATHROOM: "Baie",
+                BEDROOM: "Dormitor",
+                LIVING: "Living",
+                GENERAL: "General",
+              };
+              return (
+                <label key={cat} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedCategories.includes(cat)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedCategories([...selectedCategories, cat]);
+                        // Update primary category if none selected
+                        if (selectedCategories.length === 0) {
+                          setCategory(cat);
+                        }
+                      } else {
+                        const newCategories = selectedCategories.filter((c) => c !== cat);
+                        setSelectedCategories(newCategories);
+                        // If primary category is removed, set first remaining as primary
+                        if (category === cat && newCategories.length > 0) {
+                          setCategory(newCategories[0]);
+                        }
+                      }
+                    }}
+                    className="w-4 h-4"
+                  />
+                  <span>{labels[cat]}</span>
+                </label>
+              );
+            })}
+          </div>
+          {selectedCategories.length === 0 && (
+            <p className="text-red-500 text-sm mt-1">Selectează cel puțin o categorie</p>
+          )}
+        </div>
 
         {/* IMAGE INPUT */}
         <div>

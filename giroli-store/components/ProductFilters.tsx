@@ -51,9 +51,16 @@ export function ProductFilters({
   useEffect(() => {
     let filtered = [...products];
 
-    // Category filter
+    // Category filter - check both single category and multiple categories
     if (filters.category !== "all") {
-      filtered = filtered.filter((p) => p.category === filters.category);
+      filtered = filtered.filter((p) => {
+        // Check if product has the selected category in its categories array
+        const hasCategoryInArray = p.categories?.some(
+          (pc: { category: string }) => pc.category === filters.category
+        );
+        // Fallback to single category field for backward compatibility
+        return hasCategoryInArray || p.category === filters.category;
+      });
     }
 
     // Price range filter
