@@ -25,6 +25,7 @@ export async function GET(req: Request) {
     prisma.product.count(),
   ]);
 
+  // Cache products list for 60 seconds
   return NextResponse.json({
     products,
     pagination: {
@@ -32,6 +33,10 @@ export async function GET(req: Request) {
       limit,
       total,
       totalPages: Math.ceil(total / limit),
+    },
+  }, {
+    headers: {
+      "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
     },
   });
 }

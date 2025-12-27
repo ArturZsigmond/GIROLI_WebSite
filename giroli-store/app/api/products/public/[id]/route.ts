@@ -20,6 +20,11 @@ export async function GET(
     return NextResponse.json({ error: "Product not found" }, { status: 404 });
   }
 
-  return NextResponse.json(product);
+  // Cache for 60 seconds, revalidate in background
+  return NextResponse.json(product, {
+    headers: {
+      "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+    },
+  });
 }
 

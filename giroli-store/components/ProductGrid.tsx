@@ -4,6 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import { ProductCard } from "./ProductCard";
 import { ProductFilters } from "./ProductFilters";
 
+interface ReviewStats {
+  [productId: string]: {
+    averageRating: number;
+    totalReviews: number;
+  };
+}
+
 interface ProductImage {
   id: string;
   url: string;
@@ -26,6 +33,7 @@ interface ProductGridProps {
 export function ProductGrid({ initialProducts }: ProductGridProps) {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(initialProducts);
   const [displayedProducts, setDisplayedProducts] = useState<Product[]>(initialProducts);
+  const [reviewStats, setReviewStats] = useState<ReviewStats>({});
 
   // Calculate max price from all products
   const maxPrice = Math.max(
@@ -48,6 +56,34 @@ export function ProductGrid({ initialProducts }: ProductGridProps) {
     const end = start + ITEMS_PER_PAGE;
     setDisplayedProducts(filteredProducts.slice(start, end));
   }, [currentPage, filteredProducts]);
+
+  // Batch fetch review stats for all displayed products
+  useEffect(() => {
+    async function loadReviewStats() {
+      const productIds = displayedProducts.map((p) => p.id);
+      if (productIds.length === 0) return;
+
+      try {
+        const response = await fetch("/api/products/reviews/stats", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ productIds }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setReviewStats(data.stats || {});
+        }
+      } catch (err) {
+        // Silently fail - reviews are optional
+        console.error("Failed to load review stats:", err);
+      }
+    }
+
+    loadReviewStats();
+  }, [displayedProducts]);
 
   return (
     <>
@@ -79,7 +115,11 @@ export function ProductGrid({ initialProducts }: ProductGridProps) {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 mb-8">
             {displayedProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard 
+                key={product.id} 
+                product={product}
+                reviewStats={reviewStats[product.id]}
+              />
             ))}
           </div>
 

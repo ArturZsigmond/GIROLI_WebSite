@@ -27,30 +27,24 @@ interface Product {
   categories?: ProductCategory[];
 }
 
-export function ProductCard({ product }: { product: Product }) {
+interface ReviewStats {
+  averageRating: number;
+  totalReviews: number;
+}
+
+export function ProductCard({ 
+  product, 
+  reviewStats 
+}: { 
+  product: Product;
+  reviewStats?: ReviewStats;
+}) {
   const [addedToCart, setAddedToCart] = useState(false);
-  const [averageRating, setAverageRating] = useState(0);
-  const [totalReviews, setTotalReviews] = useState(0);
   const addToCart = useCartStore((state) => state.addItem);
   const router = useRouter();
 
-  useEffect(() => {
-    // Fetch review stats for this product
-    async function loadReviewStats() {
-      try {
-        const response = await fetch(`/api/products/${product.id}/reviews`);
-        if (response.ok) {
-          const data = await response.json();
-          setAverageRating(data.averageRating || 0);
-          setTotalReviews(data.totalReviews || 0);
-        }
-      } catch (err) {
-        // Silently fail - reviews are optional
-        console.error("Failed to load review stats:", err);
-      }
-    }
-    loadReviewStats();
-  }, [product.id]);
+  const averageRating = reviewStats?.averageRating || 0;
+  const totalReviews = reviewStats?.totalReviews || 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();

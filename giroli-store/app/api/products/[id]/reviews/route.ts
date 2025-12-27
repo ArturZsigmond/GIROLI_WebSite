@@ -24,10 +24,15 @@ export async function GET(
         ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
         : 0;
 
+    // Cache reviews for 30 seconds (they don't change often)
     return NextResponse.json({
       reviews,
       averageRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal
       totalReviews: reviews.length,
+    }, {
+      headers: {
+        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120",
+      },
     });
   } catch (error) {
     console.error("Error fetching reviews:", error);
