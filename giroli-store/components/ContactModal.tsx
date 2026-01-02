@@ -117,7 +117,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
             <div className="flex-1 min-w-0">
               <p className="text-xs text-gray-500 mb-1">Telefon</p>
               <a
-                href="tel:+40786192057"
+                href="tel:+40742070321"
                 className="text-green-700 hover:text-green-800 font-medium"
               >
                 +40 786 192 057

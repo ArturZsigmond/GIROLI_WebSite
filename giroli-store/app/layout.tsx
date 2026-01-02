@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Giroli CNC - Produse Premium",
+  title: "Giroli Mobilier - Produse Premium",
   description: "Descoperă gama noastră de produse CNC de înaltă calitate",
 };
 
