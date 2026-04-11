@@ -43,9 +43,10 @@ function absolutizeUpstreamAssets(html: string, upstream: string): string {
   );
 }
 
-/** Only URLs that the soil app serves at root: /health or /{digits}/... */
+/** Paths the soil Firebase app serves (not giroli-store routes). */
 function shouldProxyToSoil(pathname: string): boolean {
   if (pathname === "/health") return true;
+  if (/^\/device(\/|$)/.test(pathname)) return true;
   return /^\/\d/.test(pathname);
 }
 
@@ -109,6 +110,8 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     "/health",
+    "/device",
+    "/device/:path*",
     /*
      * /123456 or /123456/temp=...;ph=... (same shapes as soil Firebase app)
      */
