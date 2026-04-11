@@ -9,6 +9,17 @@ function upstreamBase(): string {
   return raw.replace(/\/$/, "");
 }
 
+/**
+ * Angular SPA shell uses <base href="/"> so scripts load from the *current* host.
+ * When masked under girolimob.com those JS files 404 — blank page. Point base at upstream.
+ */
+function rewriteAngularBaseHref(html: string, origin: string): string {
+  const base = `${origin}/`;
+  return html
+    .replace(/<base\s+href="\/"\s*\/?>/i, `<base href="${base}">`)
+    .replace(/<base\s+href='\/'\s*\/?>/i, `<base href="${base}">`);
+}
+
 /** Only URLs that the soil app serves at root: /health or /{digits}/... */
 function shouldProxyToSoil(pathname: string): boolean {
   if (pathname === "/health") return true;
@@ -44,12 +55,22 @@ export async function middleware(req: NextRequest) {
     });
 
     const headers = new Headers();
-    const ct = res.headers.get("content-type");
+    const ct = res.headers.get("content-type") ?? "";
     if (ct) headers.set("content-type", ct);
     const cc = res.headers.get("cache-control");
     headers.set("cache-control", cc ?? "no-store");
 
-    const body = req.method === "HEAD" ? null : await res.arrayBuffer();
+    if (req.method === "HEAD") {
+      return new NextResponse(null, { status: res.status, headers });
+    }
+
+    if (ct.includes("text/html")) {
+      let html = await res.text();
+      html = rewriteAngularBaseHref(html, upstreamBase());
+      return new NextResponse(html, { status: res.status, headers });
+    }
+
+    const body = await res.arrayBuffer();
     return new NextResponse(body, { status: res.status, headers });
   } catch (e) {
     console.error("[soil-proxy]", target, e);
