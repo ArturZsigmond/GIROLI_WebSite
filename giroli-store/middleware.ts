@@ -9,15 +9,38 @@ function upstreamBase(): string {
   return raw.replace(/\/$/, "");
 }
 
+/** Public URL the browser sees (Railway / Cloudflare set x-forwarded-*). */
+function getVisitorOrigin(req: NextRequest): string {
+  const host =
+    req.headers.get("x-forwarded-host") ??
+    req.headers.get("host") ??
+    req.nextUrl.host;
+  const proto =
+    req.headers.get("x-forwarded-proto") ?? req.nextUrl.protocol.replace(":", "");
+  return `${proto}://${host}`;
+}
+
 /**
- * Angular SPA shell uses <base href="/"> so scripts load from the *current* host.
- * When masked under girolimob.com those JS files 404 — blank page. Point base at upstream.
+ * Router must see the *visitor* origin (girolimob.com). If base points at Firebase,
+ * Angular calls replaceState with Firebase URLs while document.origin is girolimob → SecurityError.
  */
-function rewriteAngularBaseHref(html: string, origin: string): string {
-  const base = `${origin}/`;
+function rewriteAngularBaseHref(html: string, visitorOrigin: string): string {
+  const base = `${visitorOrigin.replace(/\/$/, "")}/`;
   return html
     .replace(/<base\s+href="\/"\s*\/?>/i, `<base href="${base}">`)
     .replace(/<base\s+href='\/'\s*\/?>/i, `<base href="${base}">`);
+}
+
+/** Root-relative assets 404 on girolimob — load JS/CSS/icons from the real Firebase host. */
+function absolutizeUpstreamAssets(html: string, upstream: string): string {
+  const u = upstream.replace(/\/$/, "");
+  return html.replace(
+    /\b(src|href)="(?!https?:\/\/|\/\/|data:|blob:)([^"]+)"/gi,
+    (_, attr: string, path: string) => {
+      const abs = path.startsWith("/") ? `${u}${path}` : `${u}/${path}`;
+      return `${attr}="${abs}"`;
+    }
+  );
 }
 
 /** Only URLs that the soil app serves at root: /health or /{digits}/... */
@@ -66,7 +89,9 @@ export async function middleware(req: NextRequest) {
 
     if (ct.includes("text/html")) {
       let html = await res.text();
-      html = rewriteAngularBaseHref(html, upstreamBase());
+      const visitorOrigin = getVisitorOrigin(req);
+      html = rewriteAngularBaseHref(html, visitorOrigin);
+      html = absolutizeUpstreamAssets(html, upstreamBase());
       return new NextResponse(html, { status: res.status, headers });
     }
 
