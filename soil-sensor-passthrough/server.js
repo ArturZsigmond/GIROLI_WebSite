@@ -1,6 +1,7 @@
 /**
- * Standalone ingest: HTTP (plain) from legacy cellular modules → Firebase.
- * Deploy this service separately from the main website (e.g. Railway, VPS, PM2).
+ * Standalone HTTP ingest for sensor modules.
+ * Mode `proxy` (default): forwards requests to upstream SoilProject URL.
+ * Mode `firebase`: stores readings directly in Firebase.
  */
 import express from "express";
 import { initializeApp, getApps, cert, applicationDefault } from "firebase-admin/app";
@@ -9,13 +10,14 @@ import { getDatabase } from "firebase-admin/database";
 
 const PORT = Number(process.env.PORT) || 8787;
 const INGEST_SECRET = process.env.INGEST_SECRET || "";
-const TARGET = (process.env.SOIL_FIREBASE_TARGET || "firestore").toLowerCase();
+const MODE = (process.env.SOIL_MODE || "proxy").toLowerCase(); // proxy | firebase
+const UPSTREAM_BASE = (process.env.SOIL_UPSTREAM_BASE || "https://soilproject-fddd0.web.app").replace(/\/$/, "");
+const TARGET = (process.env.SOIL_FIREBASE_TARGET || "firestore").toLowerCase(); // used in firebase mode only
 
 function initFirebase() {
   if (getApps().length) return;
   const json = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  const databaseURL =
-    TARGET === "rtdb" ? process.env.FIREBASE_DATABASE_URL : undefined;
+  const databaseURL = TARGET === "rtdb" ? process.env.FIREBASE_DATABASE_URL : undefined;
   if (TARGET === "rtdb" && !databaseURL) {
     throw new Error("FIREBASE_DATABASE_URL is required when SOIL_FIREBASE_TARGET=rtdb");
   }
@@ -42,13 +44,12 @@ function buildPayload(deviceId, query) {
   const temp = parseNumber(query.temp ?? query.t);
   const ph = parseNumber(query.ph);
   const moisture = parseNumber(query.moisture ?? query.m);
-  const ts = Date.now();
   return {
     deviceId,
     temp,
     ph,
     moisture,
-    receivedAt: ts,
+    receivedAt: Date.now(),
   };
 }
 
@@ -66,10 +67,15 @@ async function writeFirebase(deviceId, payload) {
   return { store: "firestore", collection: coll };
 }
 
+function buildTarget(req) {
+  const full = new URL(req.originalUrl, `http://${req.headers.host}`);
+  return `${UPSTREAM_BASE}${full.pathname}${full.search}`;
+}
+
 const app = express();
 
 app.get("/health", (_req, res) => {
-  res.json({ ok: true, service: "soil-sensor-passthrough" });
+  res.json({ ok: true, service: "soil-sensor-passthrough", mode: MODE, upstream: UPSTREAM_BASE });
 });
 
 function checkSecret(req) {
@@ -86,21 +92,44 @@ async function handleIngest(req, res, deviceId) {
   if (!checkSecret(req)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
+
+  if (MODE === "proxy") {
+    const target = buildTarget(req);
+    try {
+      const upstreamRes = await fetch(target, {
+        method: req.method,
+        headers: { Accept: req.headers.accept || "*/*" },
+        redirect: "manual",
+      });
+      const contentType = upstreamRes.headers.get("content-type") || "application/octet-stream";
+      res.status(upstreamRes.status);
+      res.setHeader("content-type", contentType);
+      res.setHeader("x-soil-proxy-upstream", UPSTREAM_BASE);
+      const body = Buffer.from(await upstreamRes.arrayBuffer());
+      return res.send(body);
+    } catch (e) {
+      return res.status(502).json({
+        error: "Proxy failed",
+        target,
+        message: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
   try {
     initFirebase();
   } catch (e) {
-    console.error(e);
     return res.status(500).json({
       error: "Firebase not configured",
-      hint: "Set FIREBASE_SERVICE_ACCOUNT_JSON or use ADC with GOOGLE_APPLICATION_CREDENTIALS",
+      hint: "Set FIREBASE_SERVICE_ACCOUNT_JSON or switch SOIL_MODE=proxy",
+      message: e instanceof Error ? e.message : String(e),
     });
   }
   const payload = buildPayload(deviceId, req.query);
   try {
     const meta = await writeFirebase(deviceId, payload);
-    return res.json({ ok: true, ...meta, deviceId });
+    return res.json({ ok: true, mode: "firebase", ...meta, deviceId });
   } catch (e) {
-    console.error(e);
     return res.status(502).json({
       error: "Firebase write failed",
       message: e instanceof Error ? e.message : String(e),
@@ -110,13 +139,16 @@ async function handleIngest(req, res, deviceId) {
 
 // Matches: /123456?temp=10.4&ph=7&moisture=73
 app.get("/:deviceId", (req, res) => {
-  if (req.params.deviceId === "health") {
-    return res.redirect("/health");
-  }
+  if (req.params.deviceId === "health") return res.redirect("/health");
   return handleIngest(req, res, req.params.deviceId);
 });
 
-// Explicit path if the device cannot use a "bare" first segment
+// Matches: /123456/temp=10.4;ph=7;moisture=65
+app.get("/:deviceId/:sensorPath", (req, res) => {
+  return handleIngest(req, res, req.params.deviceId);
+});
+
+// Explicit path variants
 app.get("/ingest/:deviceId", (req, res) => {
   return handleIngest(req, res, req.params.deviceId);
 });
@@ -132,4 +164,5 @@ app.use((_req, res) => {
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`soil-sensor-passthrough listening on http://0.0.0.0:${PORT}`);
+  console.log(`mode=${MODE} upstream=${UPSTREAM_BASE}`);
 });
